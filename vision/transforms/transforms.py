@@ -252,7 +252,7 @@ class RandomSampleCrop(object):
         height, width, _ = image.shape
 
         while True:  # ✅ Added retry mechanism
-            mode = random.choice(self.sample_options)
+            mode = rd.choice(self.sample_options)
         if mode is None:
             return image, boxes, labels  # ✅ Fallback to original image if no crop
 

@@ -74,7 +74,7 @@ class Compose(object):
 
     def __call__(self, img, boxes=None, labels=None):
         if boxes is not None:
-        boxes = np.atleast_2d(boxes)
+            boxes = np.atleast_2d(boxes)
         if boxes.shape[1] != 4:
             boxes = np.zeros((0, 4), dtype=np.float32)
         for t in self.transforms:

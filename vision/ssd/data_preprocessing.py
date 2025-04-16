@@ -13,7 +13,7 @@ class TrainAugmentation:
         self.augment = Compose([
             ConvertFromInts(),
             PhotometricDistort(),
-            Expand(self.mean),
+            #Expand(self.mean),
             #RandomSampleCrop(),
             RandomMirror(),
             ToPercentCoords(),

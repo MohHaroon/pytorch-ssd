@@ -55,6 +55,7 @@ class Compose(object):
         self.transforms = transforms
 
     def __call__(self, img, boxes=None, labels=None):
+        boxes = np.atleast_2d(boxes)
         for t in self.transforms:
             img, boxes, labels = t(img, boxes, labels)
         return img, boxes, labels
@@ -332,6 +333,7 @@ class Expand(object):
         self.mean = mean
 
     def __call__(self, image, boxes, labels):
+        boxes = np.atleast_2d(boxes)
         if random.randint(2):
             return image, boxes, labels
 
@@ -358,6 +360,7 @@ class Expand(object):
 
 class RandomMirror(object):
     def __call__(self, image, boxes, classes):
+        boxes = np.atleast_2d(boxes)
         _, width, _ = image.shape
         if random.randint(2):
             image = image[:, ::-1]
@@ -406,6 +409,7 @@ class PhotometricDistort(object):
         self.rand_light_noise = RandomLightingNoise()
 
     def __call__(self, image, boxes, labels):
+        boxes = np.atleast_2d(boxes)
         im = image.copy()
         im, boxes, labels = self.rand_brightness(im, boxes, labels)
         if random.randint(2):

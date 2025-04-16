@@ -228,7 +228,7 @@ class RandomSampleCrop(object):
             labels (Tensor): the class labels for each bbox
     """
     def __init__(self):
-    self.sample_options = [
+    self.sample_options = (
         # using entire original input image
         None,
         # sample a patch s.t. MIN jaccard w/ obj in .1,.3,.4,.7,.9
@@ -238,7 +238,7 @@ class RandomSampleCrop(object):
         (0.9, None),
         # randomly sample a patch
         (None, None),
-    ]
+    )
 
     def __call__(self, image, boxes=None, labels=None):
         height, width, _ = image.shape

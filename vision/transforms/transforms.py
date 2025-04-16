@@ -27,29 +27,35 @@ def intersect(box_a, box_b):
 
 
 def jaccard_numpy(box_a, box_b):
-    """Compute the jaccard overlap of two sets of boxes.  The jaccard overlap
-    is simply the intersection over union of two boxes.
-    E.g.:
-        A ∩ B / A ∪ B = A ∩ B / (area(A) + area(B) - A ∩ B)
-    Args:
-        box_a: Multiple bounding boxes, Shape: [num_boxes,4]
-        box_b: Single bounding box, Shape: [4]
-    Return:
-        jaccard overlap: Shape: [box_a.shape[0], box_a.shape[1]]
     """
-    box_a = np.atleast_2d(box_a)
-    box_b = np.atleast_1d(box_b)
-    if box_b.shape[0] == 0:
+    Compute the Jaccard overlap (IoU) between box_a and box_b.
+    Args:
+        box_a (ndarray): shape [num_boxes, 4]
+        box_b (ndarray): shape [4] or [1, 4]
+    Returns:
+        overlaps (ndarray): shape [num_boxes]
+    """
+    box_a = np.atleast_2d(box_a).astype(np.float32)
+    box_b = np.atleast_1d(box_b).astype(np.float32)
+
+    if box_a.shape[0] == 0 or box_b.shape[0] == 0:
         return np.zeros((box_a.shape[0],), dtype=np.float32)
 
-    
-    inter = intersect(box_a, box_b)
-    area_a = ((box_a[:, 2]-box_a[:, 0]) *
-              (box_a[:, 3]-box_a[:, 1]))  # [A,B]
-    area_b = ((box_b[2]-box_b[0]) *
-              (box_b[3]-box_b[1]))  # [A,B]
+    if box_b.ndim == 1 and box_b.shape[0] == 4:
+        box_b = box_b.reshape(1, 4)
+    elif box_b.shape[-1] != 4:
+        raise ValueError(f"box_b must be of shape [4] or [1, 4], got {box_b.shape}")
+
+    inter = intersect(box_a, box_b[0])
+
+    area_a = (box_a[:, 2] - box_a[:, 0]) * (box_a[:, 3] - box_a[:, 1])
+    area_b = (box_b[0, 2] - box_b[0, 0]) * (box_b[0, 3] - box_b[0, 1])
     union = area_a + area_b - inter
-    return inter / union  # [A,B]
+
+    # Avoid division by zero
+    union = np.clip(union, a_min=1e-6, a_max=None)
+    return inter / union
+
 
 
 class Compose(object):
@@ -232,112 +238,76 @@ class ToTensor(object):
 
 
 class RandomSampleCrop(object):
-    """Crop
-    Arguments:
-        img (Image): the image being input during training
-        boxes (Tensor): the original bounding boxes in pt form
-        labels (Tensor): the class labels for each bbox
-        mode (float tuple): the min and max jaccard overlaps
-    Return:
-        (img, boxes, classes)
-            img (Image): the cropped image
-            boxes (Tensor): the adjusted bounding boxes in pt form
-            labels (Tensor): the class labels for each bbox
-    """
     def __init__(self):
         self.sample_options = (
-            # using entire original input image
             None,
-            # sample a patch s.t. MIN jaccard w/ obj in .1,.3,.4,.7,.9
             (0.1, None),
             (0.3, None),
             (0.7, None),
             (0.9, None),
-            # randomly sample a patch
             (None, None),
         )
 
     def __call__(self, image, boxes=None, labels=None):
-        boxes = np.atleast_2d(boxes)
         height, width, _ = image.shape
-        while True:
+        if boxes is None or len(boxes) == 0:
+            return image, boxes, labels
 
+        boxes = np.atleast_2d(boxes).astype(np.float32)
+        labels = labels if labels is not None else np.array([], dtype=np.int64)
 
-            import random as py_random
-            mode = py_random.choice(self.sample_options)
-            # randomly choose a mode
+        for _ in range(250):  # try more times just in case
+            mode = random.choice(self.sample_options)
+
             if mode is None:
                 return image, boxes, labels
 
             min_iou, max_iou = mode
-            if min_iou is None:
-                min_iou = float('-inf')
-            if max_iou is None:
-                max_iou = float('inf')
+            min_iou = min_iou if min_iou is not None else float('-inf')
+            max_iou = max_iou if max_iou is not None else float('inf')
 
-            # max trails (50)
-            for _ in range(50):
-                current_image = image
+            # Random crop dimensions
+            w = random.uniform(0.3 * width, width)
+            h = random.uniform(0.3 * height, height)
+            if h / w < 0.5 or h / w > 2:
+                continue
 
-                w = random.uniform(0.3 * width, width)
-                h = random.uniform(0.3 * height, height)
+            left = random.uniform(0, width - w)
+            top = random.uniform(0, height - h)
+            rect = np.array([int(left), int(top), int(left + w), int(top + h)])
 
-                # aspect ratio constraint b/t .5 & 2
-                if h / w < 0.5 or h / w > 2:
-                    continue
+            overlap = jaccard_numpy(boxes, rect)
 
-                left = random.uniform(width - w)
-                top = random.uniform(height - h)
+            if overlap.size == 0:
+                continue
 
-                # convert to integer rect x1,y1,x2,y2
-                rect = np.array([int(left), int(top), int(left+w), int(top+h)])
+            if overlap.max() < min_iou or overlap.min() > max_iou:
+                continue
 
-                boxes = np.atleast_2d(boxes)
-                # calculate IoU (jaccard overlap) b/t the cropped and gt boxes
-                overlap = jaccard_numpy(boxes, rect)
+            # Crop image
+            current_image = image[rect[1]:rect[3], rect[0]:rect[2], :]
 
-                # is min and max overlap constraint satisfied? if not try again
-                if overlap.min() < min_iou and max_iou < overlap.max():
-                    continue
+            # New boxes
+            centers = (boxes[:, :2] + boxes[:, 2:]) / 2.0
+            mask = (centers[:, 0] > rect[0]) & (centers[:, 0] < rect[2]) & \
+                   (centers[:, 1] > rect[1]) & (centers[:, 1] < rect[3])
 
-                # cut the crop from the image
-                current_image = current_image[rect[1]:rect[3], rect[0]:rect[2],
-                                              :]
+            if not mask.any():
+                continue
 
-                # keep overlap with gt box IF center in sampled patch
-                centers = (boxes[:, :2] + boxes[:, 2:]) / 2.0
+            new_boxes = boxes[mask].copy()
+            new_labels = labels[mask].copy()
 
-                # mask in all gt boxes that above and to the left of centers
-                m1 = (rect[0] < centers[:, 0]) * (rect[1] < centers[:, 1])
+            # Adjust boxes to new crop
+            new_boxes[:, :2] = np.maximum(new_boxes[:, :2], rect[:2])
+            new_boxes[:, :2] -= rect[:2]
+            new_boxes[:, 2:] = np.minimum(new_boxes[:, 2:], rect[2:])
+            new_boxes[:, 2:] -= rect[:2]
 
-                # mask in all gt boxes that under and to the right of centers
-                m2 = (rect[2] > centers[:, 0]) * (rect[3] > centers[:, 1])
+            return current_image, new_boxes, new_labels
 
-                # mask in that both m1 and m2 are true
-                mask = m1 * m2
-
-                # have any valid boxes? try again if not
-                if not mask.any():
-                    continue
-
-                # take only matching gt boxes
-                current_boxes = np.atleast_2d(boxes[mask, :].copy())
-
-                # take only matching gt labels
-                current_labels = np.atleast_1d(labels[mask])
-
-                # should we use the box left and top corner or the crop's
-                current_boxes[:, :2] = np.maximum(current_boxes[:, :2],
-                                                  rect[:2])
-                # adjust to crop (by substracting crop's left,top)
-                current_boxes[:, :2] -= rect[:2]
-
-                current_boxes[:, 2:] = np.minimum(current_boxes[:, 2:],
-                                                  rect[2:])
-                # adjust to crop (by substracting crop's left,top)
-                current_boxes[:, 2:] -= rect[:2]
-
-                return current_image, current_boxes, current_labels
+        # Fallback
+        return image, boxes, labels
 
 
 class Expand(object):

@@ -298,6 +298,9 @@ class RandomSampleCrop(object):
             new_boxes = boxes[mask].copy()
             new_labels = labels[mask].copy()
 
+            if new_boxes.size == 0:  # Correct placement of the check
+                continue
+
             # Adjust boxes to new crop
             new_boxes[:, :2] = np.maximum(new_boxes[:, :2], rect[:2])
             new_boxes[:, :2] -= rect[:2]
@@ -306,6 +309,17 @@ class RandomSampleCrop(object):
 
             return current_image, new_boxes, new_labels
 
+        # Fallback
+        return image, boxes, labels
+            
+        if not mask.any():
+                continue
+
+        new_boxes = boxes[mask].copy()
+        new_labels = labels[mask].copy()
+
+        if new_boxes.size == 0:  # Add this check
+                continue    
         # Fallback
         return image, boxes, labels
 

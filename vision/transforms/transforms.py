@@ -244,8 +244,6 @@ class RandomSampleCrop(object):
         height, width, _ = image.shape
         while True:
 
-            print("Sample options:", self.sample_options)
-            print("Sample options types:", [type(opt) for opt in self.sample_options])
 
             import random as py_random
             mode = py_random.choice(self.sample_options)

@@ -56,6 +56,11 @@ class VOCDataset:
         if not self.keep_difficult:
             boxes = boxes[is_difficult == 0]
             labels = labels[is_difficult == 0]
+
+        if boxes is None or len(boxes) == 0:
+            print(f"[INFO] Skipping image {image_id} with no bounding boxes.")
+            return self.__getitem__((index + 1) % len(self))
+            
         image = self._read_image(image_id)
         if self.transform:
             image, boxes, labels = self.transform(image, boxes, labels)

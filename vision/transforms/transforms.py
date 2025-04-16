@@ -239,14 +239,14 @@ class ToTensor(object):
 
 class RandomSampleCrop(object):
     def __init__(self):
-        self.sample_options = (
+        self.sample_options = [
             None,
             (0.1, None),
             (0.3, None),
             (0.7, None),
             (0.9, None),
             (None, None),
-        )
+        ]
 
     def __call__(self, image, boxes=None, labels=None):
         height, width, _ = image.shape

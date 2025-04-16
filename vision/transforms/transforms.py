@@ -10,15 +10,15 @@ from numpy import random
 
 
 def intersect(box_a, box_b):
-    box_a = np.atleast_2d(box_a)
-    box_b = np.atleast_2d(box_b)
-    print("box_a shape:", box_a.shape)
-    print("box_b shape:", box_b.shape)
+    if box_b.shape[0] == 0:
+        # Return zeros with correct broadcastable shape
+        return np.zeros((box_a.shape[0], 1), dtype=np.float32)
 
     max_xy = np.minimum(box_a[:, 2:], box_b[2:])
     min_xy = np.maximum(box_a[:, :2], box_b[:2])
-    inter = np.clip((max_xy - min_xy), a_min=0, a_max=np.inf)
+    inter = np.clip((max_xy - min_xy), a_min=0, a_max=None)
     return inter[:, 0] * inter[:, 1]
+
 
 
 def jaccard_numpy(box_a, box_b):
@@ -35,7 +35,7 @@ def jaccard_numpy(box_a, box_b):
     box_a = np.atleast_2d(box_a)
     box_b = np.atleast_1d(box_b)
     if box_b.shape[0] == 0:
-        return 0.0  # or return dummy intersection
+        return np.zeros((box_a.shape[0],), dtype=np.float32)
 
     
     inter = intersect(box_a, box_b)

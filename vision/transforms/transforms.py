@@ -10,6 +10,8 @@ from numpy import random
 
 
 def intersect(box_a, box_b):
+    box_a = np.atleast_2d(box_a)
+    box_b = np.atleast_1d(box_b)
     max_xy = np.minimum(box_a[:, 2:], box_b[2:])
     min_xy = np.maximum(box_a[:, :2], box_b[:2])
     inter = np.clip((max_xy - min_xy), a_min=0, a_max=np.inf)
@@ -27,6 +29,8 @@ def jaccard_numpy(box_a, box_b):
     Return:
         jaccard overlap: Shape: [box_a.shape[0], box_a.shape[1]]
     """
+    box_a = np.atleast_2d(box_a)
+    box_b = np.atleast_1d(box_b)
     inter = intersect(box_a, box_b)
     area_a = ((box_a[:, 2]-box_a[:, 0]) *
               (box_a[:, 3]-box_a[:, 1]))  # [A,B]
@@ -274,6 +278,7 @@ class RandomSampleCrop(object):
                 # convert to integer rect x1,y1,x2,y2
                 rect = np.array([int(left), int(top), int(left+w), int(top+h)])
 
+                boxes = np.atleast_2d(boxes)
                 # calculate IoU (jaccard overlap) b/t the cropped and gt boxes
                 overlap = jaccard_numpy(boxes, rect)
 

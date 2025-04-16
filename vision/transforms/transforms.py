@@ -313,13 +313,13 @@ class RandomSampleCrop(object):
         return image, boxes, labels
             
         if not mask.any():
-                continue
+            continue
 
         new_boxes = boxes[mask].copy()
         new_labels = labels[mask].copy()
 
         if new_boxes.size == 0:  # Add this check
-                continue    
+            continue    
         # Fallback
         return image, boxes, labels
 

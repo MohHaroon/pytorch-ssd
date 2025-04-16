@@ -35,7 +35,8 @@ def jaccard_numpy(box_a, box_b):
     box_a = np.atleast_2d(box_a)
     box_b = np.atleast_1d(box_b)
     if box_b.shape[0] == 0:
-        return np.zeros((box_a.shape[0], 0)) 
+        return 0.0  # or return dummy intersection
+
     
     inter = intersect(box_a, box_b)
     area_a = ((box_a[:, 2]-box_a[:, 0]) *

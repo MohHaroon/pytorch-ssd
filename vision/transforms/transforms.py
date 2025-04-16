@@ -247,8 +247,8 @@ class RandomSampleCrop(object):
             print("Sample options:", self.sample_options)
             print("Sample options types:", [type(opt) for opt in self.sample_options])
 
-            import random
-            mode = random.choice(self.sample_options)
+            import random as py_random
+            mode = py_random.choice(self.sample_options)
             # randomly choose a mode
             if mode is None:
                 return image, boxes, labels

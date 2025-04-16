@@ -10,9 +10,13 @@ from numpy import random
 
 
 def intersect(box_a, box_b):
+    if box_b.ndim == 1:
+        box_b = np.expand_dims(box_b, axis=0)
+
     if box_b.shape[0] == 0:
-        # Return zeros with correct broadcastable shape
+        # Handle empty box_b safely
         return np.zeros((box_a.shape[0], 1), dtype=np.float32)
+
 
     max_xy = np.minimum(box_a[:, 2:], box_b[2:])
     min_xy = np.maximum(box_a[:, :2], box_b[:2])

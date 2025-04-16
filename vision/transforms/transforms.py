@@ -18,8 +18,9 @@ def intersect(box_a, box_b):
         return np.zeros((box_a.shape[0], 1), dtype=np.float32)
 
 
-    max_xy = np.minimum(box_a[:, 2:], box_b[2:])
-    min_xy = np.maximum(box_a[:, :2], box_b[:2])
+    max_xy = np.minimum(box_a[:, 2:], box_b[0, 2:])
+    min_xy = np.maximum(box_a[:, :2], box_b[0, :2])
+
     inter = np.clip((max_xy - min_xy), a_min=0, a_max=None)
     return inter[:, 0] * inter[:, 1]
 

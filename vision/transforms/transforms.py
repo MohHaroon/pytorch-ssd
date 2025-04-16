@@ -240,7 +240,7 @@ class ToTensor(object):
 class RandomSampleCrop(object):
     def __init__(self):
         self.sample_options = [
-            None,
+            (None, None),
             (0.1, None),
             (0.3, None),
             (0.7, None),

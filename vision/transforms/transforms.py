@@ -1,6 +1,6 @@
 # from https://github.com/amdegroot/ssd.pytorch
 
-
+import random as rd
 import torch
 from torchvision import transforms
 import cv2
@@ -257,7 +257,7 @@ class RandomSampleCrop(object):
         labels = labels if labels is not None else np.array([], dtype=np.int64)
 
         for _ in range(250):  # try more times just in case
-            mode = random.choice(self.sample_options)
+            mode = rd.choice(self.sample_options)
 
             if mode is None:
                 return image, boxes, labels

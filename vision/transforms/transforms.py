@@ -248,66 +248,66 @@ class RandomSampleCrop(object):
             (None, None),
         ]
 
-def __call__(self, image, boxes=None, labels=None):
-        height, width, _ = image.shape
-        if boxes is None or len(boxes) == 0:
-            return image, boxes, labels
-
-        boxes = np.atleast_2d(boxes).astype(np.float32)
-        labels = labels if labels is not None else np.array([], dtype=np.int64)
-
-        for _ in range(250):  # try more times just in case
-            mode = rd.choice(self.sample_options)
-
-            if mode is None:
+    def __call__(self, image, boxes=None, labels=None):
+            height, width, _ = image.shape
+            if boxes is None or len(boxes) == 0:
                 return image, boxes, labels
-
-            min_iou, max_iou = mode
-            min_iou = min_iou if min_iou is not None else float('-inf')
-            max_iou = max_iou if max_iou is not None else float('inf')
-
-            # Random crop dimensions
-            w = random.uniform(0.3 * width, width)
-            h = random.uniform(0.3 * height, height)
-            if h / w < 0.5 or h / w > 2:
-                continue
-
-            left = random.uniform(0, width - w)
-            top = random.uniform(0, height - h)
-            rect = np.array([int(left), int(top), int(left + w), int(top + h)])
-
-            overlap = jaccard_numpy(boxes, rect)
-
-            if overlap.size == 0:
-                continue
-
-            if overlap.max() < min_iou or overlap.min() > max_iou:
-                continue
-
-            # Crop image
-            current_image = image[rect[1]:rect[3], rect[0]:rect[2], :]
-
-            # New boxes
-            centers = (boxes[:, :2] + boxes[:, 2:]) / 2.0
-            mask = (centers[:, 0] > rect[0]) & (centers[:, 0] < rect[2]) & \
-                   (centers[:, 1] > rect[1]) & (centers[:, 1] < rect[3])
-
-            if not mask.any():
-                continue
-
-            new_boxes = boxes[mask].copy()
-            new_labels = labels[mask].copy()
-
-            if new_boxes.size == 0:
-                continue
-            
-            # Adjust boxes to new crop
-            new_boxes[:, :2] = np.maximum(new_boxes[:, :2], rect[:2])
-            new_boxes[:, :2] -= rect[:2]
-            new_boxes[:, 2:] = np.minimum(new_boxes[:, 2:], rect[2:])
-            new_boxes[:, 2:] -= rect[:2]
-
-            return current_image, new_boxes, new_labels
+    
+            boxes = np.atleast_2d(boxes).astype(np.float32)
+            labels = labels if labels is not None else np.array([], dtype=np.int64)
+    
+            for _ in range(250):  # try more times just in case
+                mode = rd.choice(self.sample_options)
+    
+                if mode is None:
+                    return image, boxes, labels
+    
+                min_iou, max_iou = mode
+                min_iou = min_iou if min_iou is not None else float('-inf')
+                max_iou = max_iou if max_iou is not None else float('inf')
+    
+                # Random crop dimensions
+                w = random.uniform(0.3 * width, width)
+                h = random.uniform(0.3 * height, height)
+                if h / w < 0.5 or h / w > 2:
+                    continue
+    
+                left = random.uniform(0, width - w)
+                top = random.uniform(0, height - h)
+                rect = np.array([int(left), int(top), int(left + w), int(top + h)])
+    
+                overlap = jaccard_numpy(boxes, rect)
+    
+                if overlap.size == 0:
+                    continue
+    
+                if overlap.max() < min_iou or overlap.min() > max_iou:
+                    continue
+    
+                # Crop image
+                current_image = image[rect[1]:rect[3], rect[0]:rect[2], :]
+    
+                # New boxes
+                centers = (boxes[:, :2] + boxes[:, 2:]) / 2.0
+                mask = (centers[:, 0] > rect[0]) & (centers[:, 0] < rect[2]) & \
+                       (centers[:, 1] > rect[1]) & (centers[:, 1] < rect[3])
+    
+                if not mask.any():
+                    continue
+    
+                new_boxes = boxes[mask].copy()
+                new_labels = labels[mask].copy()
+    
+                if new_boxes.size == 0:
+                    continue
+                
+                # Adjust boxes to new crop
+                new_boxes[:, :2] = np.maximum(new_boxes[:, :2], rect[:2])
+                new_boxes[:, :2] -= rect[:2]
+                new_boxes[:, 2:] = np.minimum(new_boxes[:, 2:], rect[2:])
+                new_boxes[:, 2:] -= rect[:2]
+    
+                return current_image, new_boxes, new_labels
 
 
 class Expand(object):

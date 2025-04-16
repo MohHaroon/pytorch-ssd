@@ -243,6 +243,10 @@ class RandomSampleCrop(object):
     def __call__(self, image, boxes=None, labels=None):
         height, width, _ = image.shape
         while True:
+
+            print("Sample options:", self.sample_options)
+            print("Sample options types:", [type(opt) for opt in self.sample_options])
+
             # randomly choose a mode
             mode = random.choice(self.sample_options)
             if mode is None:

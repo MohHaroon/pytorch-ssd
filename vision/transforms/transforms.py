@@ -238,68 +238,70 @@ class ToTensor(object):
 
 
 class RandomSampleCrop(object):
-    def __init__(self):
-        self.sample_options = [
-            (None, None),
-            (0.1, None),
-            (0.3, None),
-            (0.7, None),
-            (0.9, None),
-            (None, None),
-        ]
-
     def __call__(self, image, boxes=None, labels=None):
-        height, width, _ = image.shape
+        return image, boxes, labels
+    # def __init__(self):
+    #     self.sample_options = [
+    #         (None, None),
+    #         (0.1, None),
+    #         (0.3, None),
+    #         (0.7, None),
+    #         (0.9, None),
+    #         (None, None),
+    #     ]
 
-        while True:  # ✅ Added retry mechanism
-            mode = rd.choice(self.sample_options)
-        if mode is None:
-            return image, boxes, labels  # ✅ Fallback to original image if no crop
 
-        min_iou, max_iou = mode
-        min_iou = min_iou if min_iou is not None else float('-inf')  # ✅ Safer handling of None
-        max_iou = max_iou if max_iou is not None else float('inf')
-
-        for _ in range(50):  # ✅ Try up to 50 attempts to find a valid crop
-            w = random.uniform(0.3 * width, width)
-            h = random.uniform(0.3 * height, height)
-
-            if h / w < 0.5 or h / w > 2:
-                continue  # Skip non-reasonable aspect ratios
-
-            left = random.uniform(0, width - w)
-            top = random.uniform(0, height - h)
-
-            rect = np.array([int(left), int(top), int(left + w), int(top + h)])
-            overlap = jaccard_numpy(boxes, rect)
-
-            # ✅ Only continue if the crop keeps overlap within bounds
-            if overlap.min() < min_iou or overlap.max() > max_iou:
-                continue
-
-            # ✅ Check if any box center is within the crop
-            centers = (boxes[:, :2] + boxes[:, 2:]) / 2.0
-            m1 = (centers[:, 0] > rect[0]) * (centers[:, 1] > rect[1])
-            m2 = (centers[:, 0] < rect[2]) * (centers[:, 1] < rect[3])
-            mask = m1 * m2
-
-            if not mask.any():  # ✅ If no boxes are retained, skip
-                continue
-
-            boxes = boxes[mask]
-            labels = labels[mask]
-
-            # ✅ Adjust box coordinates to the new crop
-            boxes[:, :2] = np.maximum(boxes[:, :2], rect[:2])
-            boxes[:, :2] -= rect[:2]
-            boxes[:, 2:] = np.minimum(boxes[:, 2:], rect[2:])
-            boxes[:, 2:] -= rect[:2]
-
-            current_image = image[rect[1]:rect[3], rect[0]:rect[2], :]
-            return current_image, boxes, labels
 
         return image, boxes, labels
+    # def __call__(self, image, boxes=None, labels=None):
+    #     height, width, _ = image.shape
 
+    #     while True:  # ✅ Added retry mechanism
+    #         mode = rd.choice(self.sample_options)
+    #     if mode is None:
+    #         return image, boxes, labels  # ✅ Fallback to original image if no crop
+
+    #     min_iou, max_iou = mode
+    #     min_iou = min_iou if min_iou is not None else float('-inf')  # ✅ Safer handling of None
+    #     max_iou = max_iou if max_iou is not None else float('inf')
+
+    #     for _ in range(50):  # ✅ Try up to 50 attempts to find a valid crop
+    #         w = random.uniform(0.3 * width, width)
+    #         h = random.uniform(0.3 * height, height)
+
+    #         if h / w < 0.5 or h / w > 2:
+    #             continue  # Skip non-reasonable aspect ratios
+
+    #         left = random.uniform(0, width - w)
+    #         top = random.uniform(0, height - h)
+
+    #         rect = np.array([int(left), int(top), int(left + w), int(top + h)])
+    #         overlap = jaccard_numpy(boxes, rect)
+
+    #         # ✅ Only continue if the crop keeps overlap within bounds
+    #         if overlap.min() < min_iou or overlap.max() > max_iou:
+    #             continue
+
+    #         # ✅ Check if any box center is within the crop
+    #         centers = (boxes[:, :2] + boxes[:, 2:]) / 2.0
+    #         m1 = (centers[:, 0] > rect[0]) * (centers[:, 1] > rect[1])
+    #         m2 = (centers[:, 0] < rect[2]) * (centers[:, 1] < rect[3])
+    #         mask = m1 * m2
+
+    #         if not mask.any():  # ✅ If no boxes are retained, skip
+    #             continue
+
+    #         boxes = boxes[mask]
+    #         labels = labels[mask]
+
+    #         # ✅ Adjust box coordinates to the new crop
+    #         boxes[:, :2] = np.maximum(boxes[:, :2], rect[:2])
+    #         boxes[:, :2] -= rect[:2]
+    #         boxes[:, 2:] = np.minimum(boxes[:, 2:], rect[2:])
+    #         boxes[:, 2:] -= rect[:2]
+
+    #         current_image = image[rect[1]:rect[3], rect[0]:rect[2], :]
+    #         return current_image, boxes, labels
 
 class Expand(object):
     def __init__(self, mean):

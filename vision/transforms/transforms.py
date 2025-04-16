@@ -73,7 +73,10 @@ class Compose(object):
         self.transforms = transforms
 
     def __call__(self, img, boxes=None, labels=None):
-        boxes = np.atleast_2d(boxes)
+        if boxes is None or boxes.size == 0:
+        boxes = np.zeros((0, 4), dtype=np.float32)
+        else:
+            boxes = np.atleast_2d(boxes)
         for t in self.transforms:
             img, boxes, labels = t(img, boxes, labels)
         return img, boxes, labels

@@ -298,7 +298,7 @@ class RandomSampleCrop(object):
             current_image = image[rect[1]:rect[3], rect[0]:rect[2], :]
             return current_image, boxes, labels
 
-    return image, boxes, labels
+        return image, boxes, labels
 
 
 class Expand(object):

@@ -12,9 +12,6 @@ from numpy import random
 def intersect(box_a, box_b):
     box_a = np.atleast_2d(box_a)
     box_b = np.atleast_2d(box_b)
-
-    if box_b.shape[0] == 0:
-        return np.zeros((box_a.shape[0], 0)) 
     
     max_xy = np.minimum(box_a[:, 2:], box_b[2:])
     min_xy = np.maximum(box_a[:, :2], box_b[:2])
@@ -35,6 +32,9 @@ def jaccard_numpy(box_a, box_b):
     """
     box_a = np.atleast_2d(box_a)
     box_b = np.atleast_1d(box_b)
+    if box_b.shape[0] == 0:
+        return np.zeros((box_a.shape[0], 0)) 
+    
     inter = intersect(box_a, box_b)
     area_a = ((box_a[:, 2]-box_a[:, 0]) *
               (box_a[:, 3]-box_a[:, 1]))  # [A,B]

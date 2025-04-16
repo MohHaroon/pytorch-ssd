@@ -12,7 +12,9 @@ from numpy import random
 def intersect(box_a, box_b):
     box_a = np.atleast_2d(box_a)
     box_b = np.atleast_2d(box_b)
-    
+    print("box_a shape:", box_a.shape)
+    print("box_b shape:", box_b.shape)
+
     max_xy = np.minimum(box_a[:, 2:], box_b[2:])
     min_xy = np.maximum(box_a[:, :2], box_b[:2])
     inter = np.clip((max_xy - min_xy), a_min=0, a_max=np.inf)

@@ -245,6 +245,7 @@ class RandomSampleCrop(object):
         )
 
     def __call__(self, image, boxes=None, labels=None):
+        boxes = np.atleast_2d(boxes)
         height, width, _ = image.shape
         while True:
 
@@ -348,6 +349,7 @@ class Expand(object):
         image = expand_image
 
         boxes = boxes.copy()
+        boxes = np.atleast_2d(boxes)
         boxes[:, :2] += (int(left), int(top))
         boxes[:, 2:] += (int(left), int(top))
 

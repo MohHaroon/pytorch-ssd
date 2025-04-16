@@ -51,23 +51,34 @@ class VOCDataset:
         self.class_dict = {class_name: i for i, class_name in enumerate(self.class_names)}
 
     def __getitem__(self, index):
-        image_id = self.ids[index]
-        boxes, labels, is_difficult = self._get_annotation(image_id)
-        if not self.keep_difficult:
-            boxes = boxes[is_difficult == 0]
-            labels = labels[is_difficult == 0]
-
-        if boxes is None or len(boxes) == 0:
-            print(f"[INFO] Skipping image {image_id} with no bounding boxes.")
-            return self.__getitem__((index + 1) % len(self))
-            
-        image = self._read_image(image_id)
-        if self.transform:
-            image, boxes, labels = self.transform(image, boxes, labels)
-        if self.target_transform:
-            boxes, labels = self.target_transform(boxes, labels)
-        return image, boxes, labels
-
+        # Cycle through dataset indices if needed
+        for _ in range(len(self.ids)):
+            image_id = self.ids[index]
+            boxes, labels, is_difficult = self._get_annotation(image_id)
+    
+            if not self.keep_difficult:
+                boxes = boxes[is_difficult == 0]
+                labels = labels[is_difficult == 0]
+    
+            # Skip if boxes are empty
+            if boxes is None or len(boxes) == 0:
+                print(f"[SKIP] No boxes for image: {image_id}")
+                index = (index + 1) % len(self.ids)
+                continue
+    
+            image = self._read_image(image_id)
+    
+            if self.transform:
+                image, boxes, labels = self.transform(image, boxes, labels)
+    
+            if self.target_transform:
+                boxes, labels = self.target_transform(boxes, labels)
+    
+            return image, boxes, labels
+    
+        # 🚨 If all samples are invalid
+        raise RuntimeError("No valid samples with bounding boxes in dataset.")
+        
     def get_image(self, index):
         image_id = self.ids[index]
         image = self._read_image(image_id)

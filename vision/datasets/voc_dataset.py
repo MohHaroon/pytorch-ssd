@@ -51,35 +51,25 @@ class VOCDataset:
         self.class_dict = {class_name: i for i, class_name in enumerate(self.class_names)}
 
     def __getitem__(self, index):
-        max_attempts = 5  # Try 10 times max
-        attempts = 0
+       image_id = self.ids[index]
+        boxes, labels, is_difficult = self._get_annotation(image_id)
     
-        while attempts < max_attempts:
-            image_id = self.ids[index]
-            boxes, labels, is_difficult = self._get_annotation(image_id)
+        if not self.keep_difficult:
+            boxes = boxes[is_difficult == 0]
+            labels = labels[is_difficult == 0]
     
-            if not self.keep_difficult:
-                boxes = boxes[is_difficult == 0]
-                labels = labels[is_difficult == 0]
+        if boxes is None or len(boxes) == 0:
+            raise ValueError(f"[SKIP] No boxes for image: {image_id}")
     
-            # Skip if boxes are empty
-            if boxes is None or len(boxes) == 0:
-                print(f"[SKIP] No boxes for image: {image_id}")
-                index = (index + 1) % len(self.ids)
-                attempts += 1
-                continue
+        image = self._read_image(image_id)
     
-            image = self._read_image(image_id)
+        if self.transform:
+            image, boxes, labels = self.transform(image, boxes, labels)
     
-            if self.transform:
-                image, boxes, labels = self.transform(image, boxes, labels)
+        if self.target_transform:
+            boxes, labels = self.target_transform(boxes, labels)
     
-            if self.target_transform:
-                boxes, labels = self.target_transform(boxes, labels)
-    
-            return image, boxes, labels
-            
-        raise ValueError("Too many invalid samples in dataset.")
+        return image, boxes, labels
         
     def get_image(self, index):
         image_id = self.ids[index]

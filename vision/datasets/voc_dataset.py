@@ -51,8 +51,10 @@ class VOCDataset:
         self.class_dict = {class_name: i for i, class_name in enumerate(self.class_names)}
 
     def __getitem__(self, index):
-        # Cycle through dataset indices if needed
-        for _ in range(len(self.ids)):
+        max_attempts = 5  # Try 10 times max
+        attempts = 0
+    
+        while attempts < max_attempts:
             image_id = self.ids[index]
             boxes, labels, is_difficult = self._get_annotation(image_id)
     
@@ -64,6 +66,7 @@ class VOCDataset:
             if boxes is None or len(boxes) == 0:
                 print(f"[SKIP] No boxes for image: {image_id}")
                 index = (index + 1) % len(self.ids)
+                attempts += 1
                 continue
     
             image = self._read_image(image_id)
@@ -75,9 +78,8 @@ class VOCDataset:
                 boxes, labels = self.target_transform(boxes, labels)
     
             return image, boxes, labels
-    
-        # 🚨 If all samples are invalid
-        raise RuntimeError("No valid samples with bounding boxes in dataset.")
+            
+        raise ValueError("Too many invalid samples in dataset.")
         
     def get_image(self, index):
         image_id = self.ids[index]

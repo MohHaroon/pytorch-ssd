@@ -51,7 +51,7 @@ class VOCDataset:
         self.class_dict = {class_name: i for i, class_name in enumerate(self.class_names)}
 
     def __getitem__(self, index):
-       image_id = self.ids[index]
+        image_id = self.ids[index]
         boxes, labels, is_difficult = self._get_annotation(image_id)
     
         if not self.keep_difficult:
